@@ -2,15 +2,14 @@
 
 use App\Http\Controllers\API\PropertyController;
 use App\Http\Controllers\API\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// public route 
+// public route
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
 
 
-// protected route 
+// protected route
 Route::group(['prefix' => 'property', 'middleware' => 'auth:sanctum'], function () {
     Route::post('/add', [PropertyController::class, 'add']);
     Route::get('/edit/{id}', [PropertyController::class, 'edit']);
@@ -21,9 +20,6 @@ Route::group(['prefix' => 'property', 'middleware' => 'auth:sanctum'], function 
 });
 
 Route::group(['middleware' => 'auth:sanctum'], function () {
+    Route::get('/user', [UserController::class, 'user']);
     Route::post('/logout', [UserController::class, 'logout']);
-});
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
 });

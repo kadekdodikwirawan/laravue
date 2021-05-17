@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers\API;
 
-// use Illuminate\Support\Facades\Session;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Controller;
 
-class UserController extends Controller
+class UserController extends ApiController
 {
     /**
      * Register
@@ -22,20 +20,12 @@ class UserController extends Controller
             $user->email = $request->email;
             $user->password = Hash::make($request->password);
             $user->save();
-
-            $success = true;
             $message = 'User register successfully';
+            return $this->successResponse($user, $message);
         } catch (\Illuminate\Database\QueryException $ex) {
-            $success = false;
             $message = $ex->getMessage();
+            return $this->errorResponse($message, 422);
         }
-
-        // response
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-        return response()->json($response);
     }
 
     /**
@@ -47,33 +37,26 @@ class UserController extends Controller
             'email' => 'email|required',
             'password' => 'required'
         ]);
-    
+
         $credentials = request(['email', 'password']);
         if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => [
-                    'password' => [
-                        'Invalid credentials'
-                    ],
-                'success' => false,
-                ]
-            ], 422);
+           return $this->errorResponse('The given data was invalid.', 422);
         }
-    
+
         $user = User::where('email', $request->email)->first();
         $authToken = $user->createToken('auth-token')->plainTextToken;
-        
-
-        return response()->json([
+        $data = [
             'access_token' => $authToken,
             'user' => Auth::user(),
             'success' => true,
-        ])
-        
-        ->withCookie(
-            'jwt', $authToken
-        );
+        ];
+        return $this->successResponse($data, 'Login success.');
+        // ->withCookie(
+        //     'jwt', $authToken
+        // );
+    }
+    public function login_page(){
+        return view('auth.login');
     }
     /**
      * Logout
@@ -82,18 +65,18 @@ class UserController extends Controller
     {
         try {
             $request->user()->currentAccessToken()->delete();
-            $success = true;
             $message = 'Successfully logged out';
+            return $this->successResponse(null, $message);
         } catch (\Illuminate\Database\QueryException $ex) {
-            $success = false;
             $message = $ex->getMessage();
+            return $this->errorResponse($message, 422);
         }
-
-        // response
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-        return response()->json($response);
+    }
+    /**
+     * Current User
+     */
+    public function user(Request $request){
+        $user = $request->user();
+        return $this->successResponse([ 'user' => $user], 'Current User');
     }
 }
